@@ -1,0 +1,136 @@
+version: "3.9"
+
+services:
+
+  database:
+    container_name: postgres
+    image: postgres:16
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: springbootmicroservicesjwt  # Default DB (optional)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME}" ]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    networks:
+      - springbootmicroservicesnetwork
+
+
+  eurekaserver:
+    image: eurekaserver:latest
+    build:
+      context: ./eurekaserver
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_APPLICATION_NAME=eurekaserver
+      - EUREKA_INSTANCE_HOSTNAME=localhost
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - SERVER_PORT=8761
+    networks:
+      - springbootmicroservicesnetwork
+    platform: linux/amd64
+
+
+  apigateway:
+    image: apigateway:latest
+    build:
+      context: ./apigateway
+      dockerfile: Dockerfile
+    ports:
+      - "1110:1110"
+    environment:
+      - SPRING_APPLICATION_NAME=apigateway
+      - EUREKA_SERVICE_URL=http://eurekaserver:8761/eureka/
+    depends_on:
+      eurekaserver:
+        condition: service_started
+    networks:
+      - springbootmicroservicesnetwork
+    platform: linux/amd64
+
+  productservice:
+    image: productservice:latest
+    build:
+      context: ./productservice
+      dockerfile: Dockerfile
+    ports:
+      - "1111:1111"
+    environment:
+      - server.port=1111
+      - SPRING_APPLICATION_NAME=productservice
+      - EUREKA_SERVICE_URL=http://eurekaserver:8761/eureka/
+      - SECURITY_DB_IP=database
+      - SECURITY_DB_PORT=3307
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/springbootmicroservicesjwtproduct
+      - spring.datasource.username=${DATABASE_USERNAME}
+      - spring.datasource.password=${DATABASE_PASSWORD}
+    depends_on:
+      database:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_started
+    networks:
+      - springbootmicroservicesnetwork
+    platform: linux/amd64
+
+  authservice:
+    image: authservice:latest
+    build:
+      context: ./authservice
+      dockerfile: Dockerfile
+    ports:
+      - "1112:1112"
+    environment:
+      - server.port=1112
+      - SPRING_APPLICATION_NAME=authservice
+      - EUREKA_SERVICE_URL=http://eurekaserver:8761/eureka/
+    depends_on:
+      eurekaserver:
+        condition: service_started
+    networks:
+      - springbootmicroservicesnetwork
+    platform: linux/amd64
+
+  userservice:
+    image: userservice:latest
+    build:
+      context: ./userservice
+      dockerfile: Dockerfile
+    ports:
+      - "1113:1113"
+    environment:
+      - server.port=1113
+      - SPRING_APPLICATION_NAME=userservice
+      - EUREKA_SERVICE_URL=http://eurekaserver:8761/eureka/
+      - SECURITY_DB_IP=database
+      - SECURITY_DB_PORT=3307
+      - spring.datasource.url=jdbc:postgresql://postgres:5432/springbootmicroservicesjwtproduct
+      - spring.datasource.username=${DATABASE_USERNAME}
+      - spring.datasource.password=${DATABASE_PASSWORD}
+    depends_on:
+      database:
+        condition: service_healthy
+      eurekaserver:
+        condition: service_started
+    networks:
+      - springbootmicroservicesnetwork
+    platform: linux/amd64
+
+networks:
+  springbootmicroservicesnetwork:
+    driver: bridge
+
+volumes:
+  postgres_data:
