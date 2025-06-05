@@ -6,12 +6,36 @@ spring:
     name: apigateway
   cloud:
     gateway:
+      # Remove DedupeResponseHeader from default-filters if gateway handles CORS comprehensively
+      # Or keep it if you want to be absolutely sure no duplicates from services slip through.
+      # For a clean setup where gateway is the authority, you might not need it.
+      # Let's comment it out for now and assume the gateway's global CORS is the primary source.
+      # default-filters:
+      #   - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
       discovery:
         locator:
           enabled: true
       httpclient:
         connect-timeout: 60000
         response-timeout: 60s
+
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]': # Apply this configuration to all paths
+            allowedOrigins: "http://localhost:5173" # For development. For production, specify your frontend URL(s) e.g., "http://localhost:3000", "https://your-frontend.com"
+            allowedMethods: # List the methods your frontend will use
+              - "GET"
+              - "POST"
+              - "PUT"
+              - "DELETE"
+              - "OPTIONS" # OPTIONS is crucial for pre-flight requests
+              - "PATCH"
+            allowedHeaders: "*" # Allows all headers. You can be more specific if needed.
+            allowCredentials: true # Set to true if your frontend needs to send cookies or use Authorization headers with credentials.
+            # IMPORTANT: If true, allowedOrigins CANNOT be "*" in most browsers. You MUST specify explicit origins.
+            maxAge: 3600 # How long the results of a pre-flight request can be cached (in seconds)
 
 eureka:
   client:
@@ -21,6 +45,8 @@ eureka:
 logging:
   level:
     org.springframework.security: DEBUG
+    org.springframework.web.cors.CorsConfiguration: TRACE
+    org.springframework.cloud.gateway: TRACE
     org.springframework.security.web.access.ExceptionTranslationFilter: DEBUG
     org.springframework.security.web.FilterChainProxy: DEBUG
     org.springframework.security.web.authentication: DEBUG

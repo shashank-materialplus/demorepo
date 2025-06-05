@@ -16,5 +16,7 @@ public interface ProductUpdateService {
      * @return The updated Product object.
      */
     Product updateProductById(final String productId, final ProductUpdateRequest productUpdateRequest);
+    Product processPurchase(final String productId, final int quantityToPurchase);
+
 
 }

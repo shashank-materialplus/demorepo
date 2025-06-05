@@ -9,9 +9,15 @@ import com.springbootmicroservices.productservice.model.product.mapper.ListProdu
 import com.springbootmicroservices.productservice.model.product.mapper.ProductEntityToProductMapper;
 import com.springbootmicroservices.productservice.repository.ProductRepository;
 import com.springbootmicroservices.productservice.service.ProductReadService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification; // For specifications
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
+
 
 import java.util.List;
 
@@ -60,17 +66,51 @@ public class ProductReadServiceImpl implements ProductReadService {
     @Override
     public CustomPage<Product> getProducts(ProductPagingRequest productPagingRequest) {
 
-        final Page<ProductEntity> productEntityPage = productRepository.findAll(productPagingRequest.toPageable());
+        // Handle Sorting
+        Sort sort = Sort.unsorted();
+        if (productPagingRequest.getSortBy() != null && !productPagingRequest.getSortBy().isEmpty()) {
+            try {
+                String[] sortParams = productPagingRequest.getSortBy().split(",");
+                String property = sortParams[0];
+                Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("desc") ?
+                        Sort.Direction.DESC : Sort.Direction.ASC;
+                sort = Sort.by(direction, property);
+            } catch (Exception e) {
+                // Log error or handle invalid sort parameter
+                System.err.println("Invalid sort parameter: " + productPagingRequest.getSortBy());
+            }
+        }
+
+        Pageable pageable = PageRequest.of(
+                productPagingRequest.getPagination().getPageNumberForPageable(), // Use 0-based
+                productPagingRequest.getPagination().getPageSize(),
+                sort
+        );
+
+        // Handle Specifications for filtering (e.g., maxPrice)
+        Specification<ProductEntity> spec = Specification.where(null); // Start with a non-null spec
+
+        if (productPagingRequest.getMaxPrice() != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.lessThanOrEqualTo(root.get("unitPrice"), productPagingRequest.getMaxPrice())
+            );
+        }
+
+        // Add other filters to spec if any...
+
+        final Page<ProductEntity> productEntityPage = productRepository.findAll(spec, pageable);
 
         if (productEntityPage.getContent().isEmpty()) {
-            throw new ProductNotFoundException("Couldn't find any Product");
+            // Consider if throwing an exception for no results is always desired.
+            // Sometimes returning an empty page is acceptable.
+            // For now, keeping original logic:
+            throw new ProductNotFoundException("Couldn't find any Product matching criteria");
         }
 
         final List<Product> productDomainModels = listProductEntityToListProductMapper
                 .toProductList(productEntityPage.getContent());
 
         return CustomPage.of(productDomainModels, productEntityPage);
-
     }
 
     @Override

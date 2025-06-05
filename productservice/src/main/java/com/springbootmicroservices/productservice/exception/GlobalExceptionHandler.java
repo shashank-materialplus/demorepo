@@ -9,6 +9,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.springbootmicroservices.productservice.exception.InsufficientStockException;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,6 +138,17 @@ public class GlobalExceptionHandler {
                 .isSuccess(false)
                 .build();
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<CustomError> handleInsufficientStockException(final InsufficientStockException ex) {
+        CustomError error = CustomError.builder()
+                .httpStatus(HttpStatus.CONFLICT) // Or HttpStatus.BAD_REQUEST
+                .header("INSUFFICIENT_STOCK") // Custom header
+                .message(ex.getMessage())
+                .isSuccess(false)
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT); // Or HttpStatus.BAD_REQUEST
     }
 
 }

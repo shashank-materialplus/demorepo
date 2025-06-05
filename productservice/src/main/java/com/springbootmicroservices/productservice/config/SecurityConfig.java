@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // Import HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,7 +32,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@EnableMethodSecurity
+@EnableMethodSecurity // Ensures @PreAuthorize on controller methods still works where applied
 @Slf4j
 public class SecurityConfig {
 
@@ -67,7 +68,20 @@ public class SecurityConfig {
                 .exceptionHandling(customizer -> customizer.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .cors(customizer -> customizer.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(customizer -> customizer
+                .cors(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        // Allow public access to GET product endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll() // For getProducts (list with paging)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/category/{category}").permitAll()
+
+                        // Secure mutating endpoints (POST, PUT, DELETE) - these will use @PreAuthorize from controller
+                        // Or you can define authorities here as well, e.g.:
+                        // .requestMatchers(HttpMethod.POST, "/api/v1/products").hasAuthority("ADMIN")
+                        // .requestMatchers(HttpMethod.PUT, "/api/v1/products/{productId}").hasAuthority("ADMIN")
+                        // .requestMatchers(HttpMethod.DELETE, "/api/v1/products/{productId}").hasAuthority("ADMIN")
+
+                        // All other requests must be authenticated
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -85,11 +99,14 @@ public class SecurityConfig {
      */
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
-        configuration.setAllowedMethods(List.of("*"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Allows all origins
+        // For production, you might want to restrict this to your frontend's URL:
+        // configuration.setAllowedOrigins(List.of("http://localhost:3000", "https://yourfrontend.com"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // Explicitly list common methods
+        configuration.setAllowedHeaders(List.of("*")); // Allows all headers
+        // configuration.setAllowCredentials(true); // Uncomment if you need to send cookies or use session-based auth with CORS
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // Apply this CORS configuration to all paths
         return source;
     }
 

@@ -47,11 +47,13 @@ public class BaseEntity {
      */
     @PrePersist
     public void prePersist() {
+        // Safer version
         this.createdBy = Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .map(Authentication::getPrincipal)
-                .filter(user -> !"anonymousUser".equals(user))
+                .filter(principal -> !"anonymousUser".equals(principal.toString())) // Check against toString() for anonymousUser
+                .filter(Jwt.class::isInstance) // Add this filter
                 .map(Jwt.class::cast)
-                .map(jwt -> jwt.getClaim(TokenClaims.USER_EMAIL.getValue()).toString())
+                .map(jwt -> jwt.getClaimAsString(TokenClaims.USER_EMAIL.getValue())) // Use getClaimAsString for safety
                 .orElse("anonymousUser");
         this.createdAt = LocalDateTime.now();
     }

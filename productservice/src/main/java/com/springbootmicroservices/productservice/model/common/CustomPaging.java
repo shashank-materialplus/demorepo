@@ -21,6 +21,10 @@ public class CustomPaging {
     @Min(value = 1, message = "Page size must be bigger than 0")
     private Integer pageSize;
 
+    public Integer getPageNumberForPageable() { // New method for 0-based
+        return (pageNumber != null && pageNumber > 0) ? pageNumber - 1 : 0;
+    }
+
     /**
      * Returns the zero-based page number for internal processing.
      *
