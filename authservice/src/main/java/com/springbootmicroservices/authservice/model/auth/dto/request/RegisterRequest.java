@@ -30,7 +30,7 @@ public class RegisterRequest {
     private String lastName;
 
     @NotBlank(message = "Phone number can't be blank.")
-    @Size(min = 11, max = 20)
+    @Size(min = 10, max = 10)
     private String phoneNumber;
 
     @NotBlank(message = "Role can't be blank.")
