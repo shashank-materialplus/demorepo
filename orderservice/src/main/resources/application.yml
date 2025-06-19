@@ -1,0 +1,41 @@
+server:
+  port: 1114 # Port for OrderService
+
+spring:
+  application:
+    name: orderservice # Service name for Eureka and API Gateway
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/springbootmicroservicesjwtorder # Ensure this DB exists
+    username: postgres
+    password: 1234     # For local dev; use env vars/secrets for other environments
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # Good for development. Switch to 'validate' or 'none' for production and use Flyway/Liquibase.
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true # Makes Hibernate generated SQL readable in logs
+    show-sql: false # Set to true if you want to see SQL in logs (can be noisy)
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka/} # Default to localhost if env var not set
+  instance:
+    prefer-ip-address: true
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  payment:
+    return-url: http://localhost:5173/payment-return
+logging:
+  level:
+    com.springbootmicroservices.orderservice: DEBUG # Your application's base package
+    com.springbootmicroservices.orderservice.client.ProductServiceClient: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG # To see output from RequestLoggingConfig
+    org.springframework.security: DEBUG # For detailed security flow
+    # reactor.netty.http.client: DEBUG # Uncomment if debugging Feign client network calls
+    # feign.Logger: DEBUG # If using Feign's own logger (requires a Feign Logger @Bean of Level.FULL or similar)

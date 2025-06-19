@@ -24,4 +24,5 @@ COPY --from=build target/*.jar eurekaserver.jar
 EXPOSE 8761
 
 # Set the entrypoint command for running the application
-ENTRYPOINT ["java", "-jar", "eurekaserver.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar eurekaserver.jar"]
+

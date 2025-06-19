@@ -86,7 +86,7 @@ public class ProductController {
     // @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')") // Removed, now handled by SecurityConfig permitAll
     public CustomResponse<CustomPagingResponse<ProductResponse>> getProducts(
             @RequestParam(name = "page", defaultValue = "1") int page,         // 1-based page number from client
-            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "size", defaultValue = "12") int size,
             @RequestParam(name = "sortBy", required = false) String sortBy,     // e.g., "name,asc"
             @RequestParam(name = "maxPrice", required = false) BigDecimal maxPrice
             // Add other filter parameters here as @RequestParam if needed
@@ -168,7 +168,7 @@ public class ProductController {
      * @return a {@link CustomResponse} containing the updated product details after purchase
      */
     @PostMapping("/{productId}/purchase")
-    @PreAuthorize("isAuthenticated()") // Ensure user is logged in
+    //@PreAuthorize("isAuthenticated()") // Ensure user is logged in
     public CustomResponse<ProductResponse> purchaseProduct(
             @PathVariable @UUID final String productId,
             @RequestBody @Valid final PurchaseRequest purchaseRequest
