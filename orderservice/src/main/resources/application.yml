@@ -27,7 +27,7 @@ eureka:
   instance:
     prefer-ip-address: true
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY}
+  secret-key:
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
   payment:
     return-url: http://localhost:5173/payment-return

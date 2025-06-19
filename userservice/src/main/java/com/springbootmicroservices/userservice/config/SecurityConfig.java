@@ -65,13 +65,16 @@ public class SecurityConfig {
                 .cors(customizer -> customizer.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(customizer -> customizer
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/authenticate").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/refresh-token").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/validate-token").permitAll() // Called by Gateway
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/authenticate").permitAll() // Called by Gateway
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-                //.addFilterBefore(customBearerTokenAuthenticationFilter, BearerTokenAuthenticationFilter.class);
-
+                .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(customBearerTokenAuthenticationFilter, BearerTokenAuthenticationFilter.class);
         return httpSecurity.build();
     }
 

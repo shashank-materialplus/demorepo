@@ -9,6 +9,13 @@ import com.springbootmicroservices.userservice.model.user.dto.request.TokenRefre
 import com.springbootmicroservices.userservice.model.user.dto.response.TokenResponse;
 import com.springbootmicroservices.userservice.model.user.mapper.TokenToTokenResponseMapper;
 import com.springbootmicroservices.userservice.service.*;
+import com.springbootmicroservices.userservice.model.user.dto.response.UserResponse;
+import com.springbootmicroservices.userservice.service.UserService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +41,8 @@ public class UserController {
     private final UserLoginService userLoginService;
 
     private final RefreshTokenService refreshTokenService;
+
+    private final UserService userService;
 
     private final LogoutService logoutService;
 
@@ -116,6 +125,31 @@ public class UserController {
     public ResponseEntity<UsernamePasswordAuthenticationToken> getAuthentication(@RequestParam String token) {
         UsernamePasswordAuthenticationToken authentication = tokenService.getAuthentication(token);
         return ResponseEntity.ok(authentication);
+    }
+
+    /**
+    * Retrieves all users. This endpoint is restricted to ADMIN users.
+     * @return a {@link CustomResponse} containing a list of all {@link UserResponse}
+     */
+    @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public CustomResponse<List<UserResponse>> getAllUsers() {
+        log.info("UserController | getAllUsers");
+        List<UserResponse> users = userService.getAllUsers();
+        return CustomResponse.successOf(users);
+    }
+
+    /**
+     * Deletes a user by their ID. This endpoint is restricted to ADMIN users.
+     * @param userId The ID of the user to delete.
+     * @return a {@link CustomResponse} indicating success.
+     */
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public CustomResponse<Void> deleteUser(@PathVariable String userId) {
+        log.info("UserController | deleteUser with id: {}", userId);
+        userService.deleteUserById(userId);
+        return CustomResponse.SUCCESS;
     }
 
 }

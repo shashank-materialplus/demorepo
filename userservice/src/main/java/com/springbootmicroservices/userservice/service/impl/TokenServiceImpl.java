@@ -160,7 +160,7 @@ public class TokenServiceImpl implements TokenService {
         final UserType userType = UserType.valueOf(payload.get(TokenClaims.USER_TYPE.getValue()).toString());
 
         final List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(userType.name()));
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + userType.name()));
 
         return UsernamePasswordAuthenticationToken
                 .authenticated(jwt, null, authorities);
