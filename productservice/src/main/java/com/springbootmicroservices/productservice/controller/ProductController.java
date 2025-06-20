@@ -52,7 +52,7 @@ public class ProductController {
      * @return a {@link CustomResponse} containing the ID of the created product
      */
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN')") // Keep this for protected endpoint
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Keep this for protected endpoint
     public CustomResponse<String> createProduct(@RequestBody @Valid final ProductCreateRequest productCreateRequest) {
 
         final Product createdProduct = productCreateService
@@ -120,7 +120,7 @@ public class ProductController {
      * @return a {@link CustomResponse} containing the updated product details
      */
     @PutMapping("/{productId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN')") // Keep this for protected endpoint
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Keep this for protected endpoint
     public CustomResponse<ProductResponse> updatedProductById(
             @RequestBody @Valid final ProductUpdateRequest productUpdateRequest,
             @PathVariable @UUID final String productId) {
@@ -137,7 +137,7 @@ public class ProductController {
      * @return a {@link CustomResponse} indicating successful deletion
      */
     @DeleteMapping("/{productId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN')") // Keep this for protected endpoint
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // Keep this for protected endpoint
     public CustomResponse<Void> deleteProductById(@PathVariable @UUID final String productId) {
 
         productDeleteService.deleteProductById(productId);
@@ -168,7 +168,7 @@ public class ProductController {
      * @return a {@link CustomResponse} containing the updated product details after purchase
      */
     @PostMapping("/{productId}/purchase")
-    //@PreAuthorize("isAuthenticated()") // Ensure user is logged in
+    @PreAuthorize("isAuthenticated()") // Ensure user is logged in
     public CustomResponse<ProductResponse> purchaseProduct(
             @PathVariable @UUID final String productId,
             @RequestBody @Valid final PurchaseRequest purchaseRequest

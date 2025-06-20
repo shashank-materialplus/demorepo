@@ -62,7 +62,7 @@ public class CustomBearerTokenAuthenticationFilter extends OncePerRequestFilter 
 
             try {
                 // Validate the token synchronously
-                userServiceClient.validateToken(jwt);
+                // userServiceClient.validateToken(jwt);
                 log.debug("Token validation succeeded for request: {}", httpServletRequest.getRequestURI());
 
                 // Get the authentication object

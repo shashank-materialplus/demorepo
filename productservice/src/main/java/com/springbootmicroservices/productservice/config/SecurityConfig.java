@@ -74,7 +74,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll() // For getProducts (list with paging)
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/category/{category}").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/products/{productId}/purchase").permitAll()
 
 
                         // Secure mutating endpoints (POST, PUT, DELETE) - these will use @PreAuthorize from controller
