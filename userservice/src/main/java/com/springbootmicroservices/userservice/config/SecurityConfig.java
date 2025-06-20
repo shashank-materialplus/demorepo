@@ -63,6 +63,7 @@ public class SecurityConfig {
         httpSecurity
                 .exceptionHandling(customizer -> customizer.authenticationEntryPoint(customAuthenticationEntryPoint))
                 .cors(customizer -> customizer.configurationSource(corsConfigurationSource()))
+                .cors(AbstractHttpConfigurer::disable) // Disable CORS here, API Gateway should handle it
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(customizer -> customizer
                         .requestMatchers(HttpMethod.POST, "/api/v1/users/register").permitAll()
