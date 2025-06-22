@@ -5,12 +5,11 @@ import jakarta.validation.ConstraintViolationException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import com.springbootmicroservices.productservice.exception.InsufficientStockException;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,17 +20,20 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Handles MethodArgumentNotValidException thrown when validation on an argument annotated with @Valid fails.
-     *
-     * @param ex The MethodArgumentNotValidException instance.
-     * @return ResponseEntity with CustomError containing details of validation errors.
-     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<CustomError> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        CustomError error = CustomError.builder()
+                .httpStatus(HttpStatus.FORBIDDEN)
+                .header(CustomError.Header.AUTH_ERROR.getName())
+                .message("Access Denied: You do not have sufficient privileges for this resource.")
+                .isSuccess(false)
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<Object> handleMethodArgumentNotValid(final MethodArgumentNotValidException ex) {
-
         List<CustomError.CustomSubError> subErrors = new ArrayList<>();
-
         ex.getBindingResult().getAllErrors().forEach(
                 error -> {
                     String fieldName = ((FieldError) error).getField();
@@ -44,39 +46,36 @@ public class GlobalExceptionHandler {
                     );
                 }
         );
-
         CustomError customError = CustomError.builder()
                 .httpStatus(HttpStatus.BAD_REQUEST)
                 .header(CustomError.Header.VALIDATION_ERROR.getName())
                 .message("Validation failed")
                 .subErrors(subErrors)
                 .build();
-
         return new ResponseEntity<>(customError, HttpStatus.BAD_REQUEST);
-
     }
 
-    /**
-     * Handles ConstraintViolationException thrown when a bean validation constraint is violated.
-     *
-     * @param constraintViolationException The ConstraintViolationException instance.
-     * @return ResponseEntity with CustomError containing details of constraint violations.
-     */
     @ExceptionHandler(ConstraintViolationException.class)
     protected ResponseEntity<Object> handlePathVariableErrors(final ConstraintViolationException constraintViolationException) {
-
         List<CustomError.CustomSubError> subErrors = new ArrayList<>();
         constraintViolationException.getConstraintViolations()
-                .forEach(constraintViolation ->
-                        subErrors.add(
-                                CustomError.CustomSubError.builder()
-                                        .message(constraintViolation.getMessage())
-                                        .field(StringUtils.substringAfterLast(constraintViolation.getPropertyPath().toString(), "."))
-                                        .value(constraintViolation.getInvalidValue() != null ? constraintViolation.getInvalidValue().toString() : null)
-                                        .type(constraintViolation.getInvalidValue().getClass().getSimpleName())
-                                        .build()
-                        )
-                );
+                .forEach(cv -> {
+                    // --- THIS IS THE FIX ---
+                    // Get the invalid value and safely check if it's null before getting its class name.
+                    Object invalidValue = cv.getInvalidValue();
+                    String valueAsString = (invalidValue != null) ? invalidValue.toString() : null;
+                    String valueType = (invalidValue != null) ? invalidValue.getClass().getSimpleName() : null;
+                    // --- END OF FIX ---
+
+                    subErrors.add(
+                            CustomError.CustomSubError.builder()
+                                    .message(cv.getMessage())
+                                    .field(StringUtils.substringAfterLast(cv.getPropertyPath().toString(), "."))
+                                    .value(valueAsString) // Use the safe string version
+                                    .type(valueType)      // Use the safe type version
+                                    .build()
+                    );
+                });
 
         CustomError customError = CustomError.builder()
                 .httpStatus(HttpStatus.BAD_REQUEST)
@@ -86,15 +85,8 @@ public class GlobalExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(customError, HttpStatus.BAD_REQUEST);
-
     }
 
-    /**
-     * Handles RuntimeException thrown for general runtime exceptions.
-     *
-     * @param runtimeException The RuntimeException instance.
-     * @return ResponseEntity with CustomError containing details of the runtime exception.
-     */
     @ExceptionHandler(RuntimeException.class)
     protected ResponseEntity<?> handleRuntimeException(final RuntimeException runtimeException) {
         CustomError customError = CustomError.builder()
@@ -102,16 +94,9 @@ public class GlobalExceptionHandler {
                 .header(CustomError.Header.API_ERROR.getName())
                 .message(runtimeException.getMessage())
                 .build();
-
         return new ResponseEntity<>(customError, HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Handles ProductAlreadyExistException thrown when an attempt is made to create a product that already exists.
-     *
-     * @param ex The ProductAlreadyExistException instance.
-     * @return ResponseEntity with CustomError indicating product already exists.
-     */
     @ExceptionHandler(ProductAlreadyExistException.class)
     public ResponseEntity<CustomError> handleProductAlreadyExistException(final ProductAlreadyExistException ex) {
         CustomError error = CustomError.builder()
@@ -123,12 +108,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
-    /**
-     * Handles ProductNotFoundException thrown when a requested product is not found.
-     *
-     * @param ex The ProductNotFoundException instance.
-     * @return ResponseEntity with CustomError indicating product not found.
-     */
     @ExceptionHandler(ProductNotFoundException.class)
     public ResponseEntity<CustomError> handleProductNotFoundException(final ProductNotFoundException ex) {
         CustomError error = CustomError.builder()
@@ -143,12 +122,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientStockException.class)
     public ResponseEntity<CustomError> handleInsufficientStockException(final InsufficientStockException ex) {
         CustomError error = CustomError.builder()
-                .httpStatus(HttpStatus.CONFLICT) // Or HttpStatus.BAD_REQUEST
-                .header("INSUFFICIENT_STOCK") // Custom header
+                .httpStatus(HttpStatus.CONFLICT)
+                .header("INSUFFICIENT_STOCK")
                 .message(ex.getMessage())
                 .isSuccess(false)
                 .build();
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT); // Or HttpStatus.BAD_REQUEST
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
-
 }

@@ -97,6 +97,12 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- BOUNCY CASTLE DEPENDENCY -->
 		<dependency>
 			<groupId>org.bouncycastle</groupId>

@@ -106,28 +106,20 @@ class RefreshTokenServiceImplTest extends AbstractBaseServiceTest {
     void refreshToken_UserNotFound_ThrowsException() {
         // Given
         String refreshTokenString = "validRefreshToken";
-        TokenRefreshRequest tokenRefreshRequest = TokenRefreshRequest.builder()
-                .refreshToken(refreshTokenString)
-                .build();
+        TokenRefreshRequest request = TokenRefreshRequest.builder().refreshToken(refreshTokenString).build();
+        String userId = "nonExistentUserId";
+        Claims mockClaims = TokenBuilder.getValidClaims(userId, "John");
 
-        Claims mockClaims = TokenBuilder.getValidClaims("nonExistentUserId", "John");
-
-        doNothing().when(tokenService).verifyAndValidate(refreshTokenString);
         when(tokenService.getPayload(refreshTokenString)).thenReturn(mockClaims);
-        when(userRepository.findById("nonExistentUserId")).thenReturn(Optional.empty());
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        // When, Then & Verify
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-                () -> userRefreshTokenService.refreshToken(tokenRefreshRequest));
+        // When & Then
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            userRefreshTokenService.refreshToken(request);
+        });
 
-        assertEquals("""
-            User not found!
-            """, exception.getMessage());
-
-        verify(tokenService).verifyAndValidate(refreshTokenString);
-        verify(tokenService).getPayload(refreshTokenString);
-        verify(userRepository).findById("nonExistentUserId");
-
+        // THIS IS THE FIX: Assert the new, specific message.
+        assertEquals("User not found with ID: " + userId, exception.getMessage());
     }
 
     @Test

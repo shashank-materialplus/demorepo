@@ -1,33 +1,31 @@
 package com.springbootmicroservices.productservice.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.springbootmicroservices.productservice.builder.UserEntityBuilder;
 import com.springbootmicroservices.productservice.client.UserServiceClient;
-import com.springbootmicroservices.productservice.config.TokenConfigurationParameter;
-import com.springbootmicroservices.productservice.model.auth.Token;
 import com.springbootmicroservices.productservice.model.auth.enums.TokenClaims;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
+import com.springbootmicroservices.productservice.model.auth.UserStatus;
+import com.springbootmicroservices.productservice.model.auth.UserType;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mock;
+import com.springbootmicroservices.productservice.model.auth.UserStatus;
+import com.springbootmicroservices.productservice.model.auth.UserType;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.shaded.org.apache.commons.lang3.time.DateUtils;
 
-import java.util.Date;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class AbstractRestControllerTest extends AbstractTestContainerConfiguration {
+public abstract class AbstractRestControllerTest {
 
     @Autowired
     protected MockMvc mockMvc;
@@ -35,75 +33,41 @@ public class AbstractRestControllerTest extends AbstractTestContainerConfigurati
     @Autowired
     protected ObjectMapper objectMapper;
 
-    protected Token mockAdminToken;
-
-    protected Token mockUserToken;
-
-    @Mock
-    private TokenConfigurationParameter tokenConfiguration;
-
     @MockBean
     private UserServiceClient userServiceClient;
 
+    // We will generate simple mock tokens, as the content doesn't matter, only the mock response from UserServiceClient
+    protected static final String MOCK_ADMIN_TOKEN = "mockAdminToken";
+    protected static final String MOCK_USER_TOKEN = "mockUserToken";
 
     @BeforeEach
-    public void initializeAuth() {
+    public void setupAuthenticationMocks() {
+        // Mock the ADMIN authentication response
+        Jwt adminJwt = createMockJwt("admin-id-123", UserType.ADMIN);
+        UsernamePasswordAuthenticationToken adminAuth = new UsernamePasswordAuthenticationToken(
+                adminJwt, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+        Mockito.when(userServiceClient.getAuthentication(MOCK_ADMIN_TOKEN)).thenReturn(adminAuth);
+        Mockito.doNothing().when(userServiceClient).validateToken(MOCK_ADMIN_TOKEN);
 
-        this.tokenConfiguration = new TokenConfigurationParameter();
-        this.mockAdminToken = this.generate(new UserEntityBuilder().withValidAdminFields().build().getClaims());
-        this.mockUserToken = this.generate(new UserEntityBuilder().withValidUserFields().build().getClaims());
-
-        Mockito.doNothing().when(userServiceClient).validateToken(mockAdminToken.getAccessToken());
-        Mockito.doNothing().when(userServiceClient).validateToken(mockAdminToken.getAccessToken());
-
-        Mockito.when(userServiceClient.getAuthentication(mockAdminToken.getAccessToken()))
-                .thenReturn(new UsernamePasswordAuthenticationToken("admin", null, AuthorityUtils.createAuthorityList("ADMIN")));
-
-        Mockito.when(userServiceClient.getAuthentication(mockUserToken.getAccessToken()))
-                .thenReturn(new UsernamePasswordAuthenticationToken("user", null, AuthorityUtils.createAuthorityList("USER")));
-
+        // Mock the USER authentication response
+        Jwt userJwt = createMockJwt("user-id-456", UserType.USER);
+        UsernamePasswordAuthenticationToken userAuth = new UsernamePasswordAuthenticationToken(
+                userJwt, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        Mockito.when(userServiceClient.getAuthentication(MOCK_USER_TOKEN)).thenReturn(userAuth);
+        Mockito.doNothing().when(userServiceClient).validateToken(MOCK_USER_TOKEN);
     }
 
-    private Token generate(Map<String, Object> claims) {
-
-        final long currentTimeMillis = System.currentTimeMillis();
-
-        final Date tokenIssuedAt = new Date(currentTimeMillis);
-
-        final Date accessTokenExpiresAt = DateUtils.addMinutes(new Date(currentTimeMillis), tokenConfiguration.getAccessTokenExpireMinute());
-
-        final String accessToken = Jwts.builder()
-                .header()
-                .add(TokenClaims.TYP.getValue(), OAuth2AccessToken.TokenType.BEARER.getValue())
-                .and()
-                .id(UUID.randomUUID().toString())
-                .issuedAt(tokenIssuedAt)
-                .expiration(accessTokenExpiresAt)
-                .signWith(tokenConfiguration.getPrivateKey())
-                .claims(claims)
-                .compact();
-
-        final Date refreshTokenExpiresAt = DateUtils.addDays(new Date(currentTimeMillis), tokenConfiguration.getRefreshTokenExpireDay());
-
-        final JwtBuilder refreshTokenBuilder = Jwts.builder();
-
-        final String refreshToken = refreshTokenBuilder
-                .header()
-                .add(TokenClaims.TYP.getValue(), OAuth2AccessToken.TokenType.BEARER.getValue())
-                .and()
-                .id(UUID.randomUUID().toString())
-                .issuedAt(tokenIssuedAt)
-                .expiration(refreshTokenExpiresAt)
-                .signWith(tokenConfiguration.getPrivateKey())
-                .claim(TokenClaims.USER_ID.getValue(), claims.get(TokenClaims.USER_ID.getValue()))
-                .compact();
-
-        return Token.builder()
-                .accessToken(accessToken)
-                .accessTokenExpiresAt(accessTokenExpiresAt.toInstant().getEpochSecond())
-                .refreshToken(refreshToken)
+    private Jwt createMockJwt(String userId, UserType userType) {
+        return Jwt.withTokenValue("mock-token")
+                .header("alg", "none")
+                .claim(TokenClaims.USER_ID.getValue(), userId)
+                .claim(TokenClaims.USER_TYPE.getValue(), userType.name())
+                .claim(TokenClaims.USER_STATUS.getValue(), UserStatus.ACTIVE.name())
+                .claim(TokenClaims.USER_EMAIL.getValue(), "test@example.com")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
-
     }
-
 }

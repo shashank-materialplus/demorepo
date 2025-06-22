@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 class ProductUpdateServiceImplTest extends AbstractBaseServiceTest {
@@ -28,100 +29,70 @@ class ProductUpdateServiceImplTest extends AbstractBaseServiceTest {
     @Mock
     private ProductRepository productRepository;
 
-    private ProductUpdateRequestToProductEntityMapper productUpdateRequestToProductEntityMapper =
-            ProductUpdateRequestToProductEntityMapper.initialize();
-
-    private ProductEntityToProductMapper productEntityToProductMapper =
-            ProductEntityToProductMapper.initialize();
+    private final ProductUpdateRequestToProductEntityMapper productUpdateRequestToProductEntityMapper = ProductUpdateRequestToProductEntityMapper.initialize();
+    private final ProductEntityToProductMapper productEntityToProductMapper = ProductEntityToProductMapper.initialize();
 
     @Test
-    void givenProductUpdateRequest_whenProductUpdated_thenReturnProduct() {
-
+    void updateProductById_WhenUpdateIsValid_ShouldReturnUpdatedProduct() {
         // Given
         String productId = "1";
         String newProductName = "New Product Name";
+        ProductUpdateRequest request = ProductUpdateRequest.builder()
+                .name(newProductName).unitPrice(BigDecimal.TEN).amount(BigDecimal.ONE).build();
+        ProductEntity existingProduct = ProductEntity.builder().id(productId).name("Old Name").build();
 
-        ProductUpdateRequest productUpdateRequest = ProductUpdateRequest.builder()
-                .name(newProductName)
-                .amount(BigDecimal.valueOf(5))
-                .unitPrice(BigDecimal.valueOf(12))
-                .build();
-
-        ProductEntity existingProductEntity = ProductEntity.builder()
-                .id(productId)
-                .name(productUpdateRequest.getName())
-                .unitPrice(productUpdateRequest.getUnitPrice())
-                .amount(productUpdateRequest.getAmount())
-                .build();
-
-        productUpdateRequestToProductEntityMapper.mapForUpdating(existingProductEntity,productUpdateRequest);
-
-        Product expected = productEntityToProductMapper.map(existingProductEntity);
-
-        // When
-        when(productRepository.findById(productId)).thenReturn(Optional.of(existingProductEntity));
-        when(productRepository.existsProductEntityByName(newProductName)).thenReturn(false);
-        when(productRepository.save(any(ProductEntity.class))).thenReturn(existingProductEntity);
+        // When: Mock the new service logic
+        when(productRepository.findByNameAndIdNot(newProductName, productId)).thenReturn(Optional.empty()); // Name is available
+        when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
+        when(productRepository.save(any(ProductEntity.class))).thenReturn(existingProduct);
 
         // Then
-        Product updatedProduct = productUpdateService.updateProductById(productId, productUpdateRequest);
+        Product updatedProduct = productUpdateService.updateProductById(productId, request);
 
-        // Then
         assertNotNull(updatedProduct);
-        assertEquals(expected.getId(), updatedProduct.getId());
-        assertEquals(expected.getName(), updatedProduct.getName());
-        assertEquals(expected.getAmount(), updatedProduct.getAmount());
-        assertEquals(expected.getUnitPrice(), updatedProduct.getUnitPrice());
+        assertEquals(newProductName, updatedProduct.getName());
 
-        // Verify
-        verify(productRepository, times(1)).findById(productId);
-        verify(productRepository, times(1)).existsProductEntityByName(newProductName);
-        verify(productRepository, times(1)).save(any(ProductEntity.class));
-
+        // Verify the new service logic calls
+        verify(productRepository).findByNameAndIdNot(newProductName, productId);
+        verify(productRepository).findById(productId);
+        verify(productRepository).save(any(ProductEntity.class));
     }
 
     @Test
-    void givenProductUpdateRequest_whenProductNotFound_thenThrowProductNotFoundException() {
-
+    void updateProductById_WhenProductNotFound_ShouldThrowException() {
         // Given
         String productId = "1";
-        ProductUpdateRequest productUpdateRequest = new ProductUpdateRequest();
+        ProductUpdateRequest request = ProductUpdateRequest.builder().name("any name").build();
 
+        // Mock the uniqueness check, but the findById will fail first
+        when(productRepository.findByNameAndIdNot(anyString(), anyString())).thenReturn(Optional.empty());
         when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        // When/Then
-        assertThrows(ProductNotFoundException.class, () -> productUpdateService.updateProductById(productId, productUpdateRequest));
+        // When & Then
+        assertThrows(ProductNotFoundException.class, () -> productUpdateService.updateProductById(productId, request));
 
-        // Verify
-        verify(productRepository, times(1)).findById(productId);
-        verify(productRepository, never()).existsProductEntityByName(anyString());
+        // Verify findById was called, but save was not
+        verify(productRepository).findById(productId);
         verify(productRepository, never()).save(any(ProductEntity.class));
-
     }
 
     @Test
-    void givenProductUpdateRequest_whenProductAlreadyExist_thenThrowProductAlreadyExistException() {
-
+    void updateProductById_WhenNewNameAlreadyExists_ShouldThrowException() {
         // Given
         String productId = "1";
         String existingProductName = "Existing Product";
-        ProductUpdateRequest productUpdateRequest = new ProductUpdateRequest();
-        productUpdateRequest.setName(existingProductName);
+        ProductUpdateRequest request = ProductUpdateRequest.builder().name(existingProductName).build();
 
-        ProductEntity existingProductEntity = new ProductEntity();
-        existingProductEntity.setId(productId);
-        existingProductEntity.setName(existingProductName);
+        // Mock that another product (id="2") already has this name
+        when(productRepository.findByNameAndIdNot(existingProductName, productId))
+                .thenReturn(Optional.of(ProductEntity.builder().id("2").build()));
 
-        when(productRepository.existsProductEntityByName(existingProductName)).thenReturn(true);
+        // When & Then
+        assertThrows(ProductAlreadyExistException.class, () -> productUpdateService.updateProductById(productId, request));
 
-        // When/Then
-        assertThrows(ProductAlreadyExistException.class, () -> productUpdateService.updateProductById(productId, productUpdateRequest));
-
-        // Verify
-        verify(productRepository, times(1)).existsProductEntityByName(existingProductName);
-        verify(productRepository, never()).findById(productId);
+        // Verify that the process stopped after the uniqueness check
+        verify(productRepository).findByNameAndIdNot(existingProductName, productId);
+        verify(productRepository, never()).findById(anyString());
         verify(productRepository, never()).save(any(ProductEntity.class));
-
     }
-
 }

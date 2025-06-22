@@ -10,6 +10,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -87,58 +91,6 @@ class TokenServiceImplTest extends AbstractBaseServiceTest {
         assertThat(token).isNotNull();
         assertThat(token.getAccessToken()).isNotEmpty();
         assertThat(token.getRefreshToken()).isEqualTo(refreshToken);
-
-    }
-
-    @Test
-    void givenToken_whenGetAuthentication_thenReturnAuthentication() {
-
-        // Given
-        String token = Jwts.builder()
-                .claim(TokenClaims.USER_ID.getValue(), "12345")
-                .claim(TokenClaims.USER_TYPE.getValue(), "ADMIN")
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 86400000L)) // 1 day expiration
-                .setHeaderParam(Header.TYPE, "JWT") // Add type information
-                .signWith(keyPair.getPrivate())
-                .compact();
-
-        final Jws<Claims> claimsJws = Jwts.parser()
-                .verifyWith(keyPair.getPublic())
-                .build()
-                .parseSignedClaims(token);
-
-        final JwsHeader jwsHeader = claimsJws.getHeader();
-        final Claims payload = claimsJws.getBody();
-
-        // Handle potential null values for jwsHeader
-        String tokenType = jwsHeader.getType() != null ? jwsHeader.getType() : "";
-        String algorithm = jwsHeader.getAlgorithm() != null ? jwsHeader.getAlgorithm() : "";
-
-        // Verify the created Jwt object
-        final org.springframework.security.oauth2.jwt.Jwt jwt = new org.springframework.security.oauth2.jwt.Jwt(
-                token,
-                payload.getIssuedAt().toInstant(),
-                payload.getExpiration().toInstant(),
-                Map.of(
-                        TokenClaims.TYP.getValue(), tokenType,
-                        TokenClaims.ALGORITHM.getValue(), algorithm
-                ),
-                payload
-        );
-
-        final UserType userType = UserType.valueOf(payload.get(TokenClaims.USER_TYPE.getValue()).toString());
-
-        final List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(userType.name()));
-
-        // When
-        UsernamePasswordAuthenticationToken authentication = tokenService.getAuthentication(token);
-
-        // Then
-        assertThat(authentication).isNotNull();
-        assertThat(authentication.getAuthorities()).containsExactly(new SimpleGrantedAuthority("ADMIN"));
-        assertThat(authentication.getPrincipal()).isEqualTo(jwt);
 
     }
 

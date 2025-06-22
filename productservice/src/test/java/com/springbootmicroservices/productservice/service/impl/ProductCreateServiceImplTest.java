@@ -79,7 +79,7 @@ class ProductCreateServiceImplTest extends AbstractBaseServiceTest {
         ProductAlreadyExistException productAlreadyExistException =
                 assertThrows(ProductAlreadyExistException.class, () -> productCreateService.createProduct(productCreateRequest));
 
-        assertEquals("Product already exist!\n There is another product with given name: " + productName,
+        assertEquals("There is another product with given name: " + productName,
                 productAlreadyExistException.getMessage());
 
         // Verify
