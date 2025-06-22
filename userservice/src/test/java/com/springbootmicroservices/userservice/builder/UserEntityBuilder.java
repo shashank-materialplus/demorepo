@@ -19,7 +19,7 @@ public class UserEntityBuilder extends BaseBuilder<UserEntity> {
                 .withPassword("useradmin")
                 .withFirstName("John")
                 .withLastName("Doe")
-                .withPhoneNumber("12345678901011")
+                .withPhoneNumber("1234567890")
                 .withUserType(UserType.USER)
                 .withUserStatus(UserStatus.ACTIVE);
     }
@@ -31,7 +31,7 @@ public class UserEntityBuilder extends BaseBuilder<UserEntity> {
                 .withPassword("userpassword")
                 .withFirstName("John")
                 .withLastName("Doe")
-                .withPhoneNumber("12345678901012")
+                .withPhoneNumber("1234567890")
                 .withUserType(UserType.ADMIN)
                 .withUserStatus(UserStatus.ACTIVE);
     }

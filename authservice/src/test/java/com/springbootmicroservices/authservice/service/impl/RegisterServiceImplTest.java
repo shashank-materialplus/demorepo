@@ -36,7 +36,7 @@ class RegisterServiceImplTest extends AbstractBaseServiceTest {
                 .password("validPassword123")
                 .firstName("John")
                 .lastName("Doe")
-                .phoneNumber("1234567890100")
+                .phoneNumber("1234567890")
                 .role("user")
                 .build();
 
@@ -45,7 +45,7 @@ class RegisterServiceImplTest extends AbstractBaseServiceTest {
                 .email("valid.email@example.com")
                 .firstName("John")
                 .lastName("Doe")
-                .phoneNumber("1234567890100")
+                .phoneNumber("1234567890")
                 .userStatus(UserStatus.ACTIVE)
                 .userType(UserType.USER)
                 .build();

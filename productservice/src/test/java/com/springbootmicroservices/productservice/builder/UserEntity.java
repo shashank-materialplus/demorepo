@@ -9,12 +9,16 @@ import jakarta.persistence.Enumerated;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Getter
 @Setter
+@SuperBuilder
+@NoArgsConstructor
 public class UserEntity extends BaseEntity {
 
 

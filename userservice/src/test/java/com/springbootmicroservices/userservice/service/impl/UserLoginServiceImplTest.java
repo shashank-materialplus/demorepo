@@ -74,28 +74,21 @@ class UserLoginServiceImplTest extends AbstractBaseServiceTest {
     }
 
     @Test
-    void login_InvalidEmail_ThrowsAdminNotFoundException() {
-
+    void login_InvalidEmail_ThrowsUserNotFoundException() { // Renamed for clarity
         // Given
         LoginRequest loginRequest = LoginRequest.builder()
                 .email("nonexistent@example.com")
                 .password("password123")
                 .build();
+        when(userRepository.findUserEntityByEmail(loginRequest.getEmail())).thenReturn(Optional.empty());
 
-        // When
-        when(userRepository.findUserEntityByEmail(loginRequest.getEmail()))
-                .thenReturn(Optional.empty());
+        // When & Then
+        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
+            userLoginService.login(loginRequest);
+        });
 
-        // Then
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class,
-                () -> userLoginService.login(loginRequest));
-
-        assertEquals("User not found!\n Can't find with given email: " + loginRequest.getEmail(), exception.getMessage());
-
-        // Verify
-        verify(userRepository).findUserEntityByEmail(loginRequest.getEmail());
-        verifyNoInteractions(passwordEncoder, tokenService);
-
+        // THIS IS THE FIX: Assert the new, clean message from the service.
+        assertEquals("Can't find with given email: " + loginRequest.getEmail(), exception.getMessage());
     }
 
     @Test

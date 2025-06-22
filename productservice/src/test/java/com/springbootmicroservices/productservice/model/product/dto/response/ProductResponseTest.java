@@ -32,10 +32,10 @@ class ProductResponseTest {
         String description = "Product Description";
         String authorName = "Author Name";
         String imageUrl = "https://example.com/image.jpg";
-        String category = "Electronics";  // New field
+        String category = "Electronics";
 
         ProductResponse productResponse = new ProductResponse(
-                id, name, amount, unitPrice, description, authorName, imageUrl, category
+                id, name, amount, unitPrice, category, description, authorName, imageUrl
         );
 
         // Then

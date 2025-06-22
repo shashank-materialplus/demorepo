@@ -2,6 +2,7 @@ package com.springbootmicroservices.userservice.exception.handler;
 
 import com.springbootmicroservices.userservice.exception.*;
 import com.springbootmicroservices.userservice.model.common.CustomError;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import jakarta.validation.ConstraintViolationException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -53,6 +54,17 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(customError, HttpStatus.BAD_REQUEST);
 
+    }
+
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<CustomError> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        CustomError error = CustomError.builder()
+                .httpStatus(HttpStatus.FORBIDDEN) // 403 status
+                .header(CustomError.Header.AUTH_ERROR.getName())
+                .message("Access Denied: You do not have permission to perform this action.")
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
     }
 
     /**
