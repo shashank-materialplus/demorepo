@@ -31,8 +31,8 @@ public class PaymentServiceImpl implements PaymentService {
     // The Stripe secret key is now hardcoded as requested.
 
 
-    @Value("${stripe.secret-key}")
-    private String stripeSecretKey;
+//    @Value("${stripe.secret-key}")
+//    private String stripeSecretKey;
 
     @PostConstruct
     public void init() {
