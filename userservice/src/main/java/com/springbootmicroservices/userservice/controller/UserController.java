@@ -23,6 +23,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import com.springbootmicroservices.userservice.model.user.dto.response.UserResponse;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 /**
  * REST controller named {@link UserController} for managing user-related operations.
@@ -137,6 +140,20 @@ public class UserController {
         log.info("UserController | getAllUsers");
         List<UserResponse> users = userService.getAllUsers();
         return CustomResponse.successOf(users);
+    }
+
+    /**
+     * Retrieves a single user by their ID. This endpoint is restricted to ADMIN users.
+     *
+     * @param userId The ID of the user to retrieve.
+     * @return a {@link CustomResponse} containing the {@link UserResponse}.
+     */
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public CustomResponse<UserResponse> getUserById(@PathVariable final String userId) {
+        log.info("UserController | getUserById with id: {}", userId);
+        final UserResponse userResponse = userService.getUserById(userId);
+        return CustomResponse.successOf(userResponse);
     }
 
     /**

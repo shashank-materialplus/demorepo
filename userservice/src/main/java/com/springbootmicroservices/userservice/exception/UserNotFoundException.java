@@ -1,10 +1,17 @@
 package com.springbootmicroservices.userservice.exception;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
 import java.io.Serial;
 
 /**
  * Exception named {@link UserNotFoundException} thrown when a requested user cannot be found.
  */
+// --- THIS IS THE CRITICAL ADDITION ---
+// This annotation tells Spring to automatically return a 404 HTTP status
+// whenever this exception is thrown from a controller or service.
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class UserNotFoundException extends RuntimeException {
 
     @Serial
@@ -27,7 +34,7 @@ public class UserNotFoundException extends RuntimeException {
      * @param message the detail message
      */
     public UserNotFoundException(final String message) {
-        super(DEFAULT_MESSAGE + " " + message);
+        super(message); // Using super(message) is cleaner than appending to the default.
     }
 
 }

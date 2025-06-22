@@ -3,11 +3,14 @@ package com.springbootmicroservices.orderservice.controller;
 import com.springbootmicroservices.orderservice.model.common.dto.response.CustomResponse;
 import com.springbootmicroservices.orderservice.model.order.dto.request.PaymentRequestDto;
 import com.springbootmicroservices.orderservice.model.order.dto.response.PaymentResponse;
+import com.springbootmicroservices.orderservice.model.order.dto.request.CheckoutRequestDto;
+import com.springbootmicroservices.orderservice.model.order.dto.response.CheckoutResponseDto;
 import com.springbootmicroservices.orderservice.service.PaymentService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus; // For ResponseEntity status code
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,30 +28,35 @@ public class PaymentController {
         PaymentResponse paymentResponse = paymentService.processPayment(paymentRequest);
         log.info("PaymentController :: Payment processing response for Order ID: {}. Status: {}",
                 paymentRequest.getOrderId(),
-                paymentResponse != null ? paymentResponse.getStatus() : "N/A"); // Null check for safety
+                paymentResponse != null ? paymentResponse.getStatus() : "N/A");
         return CustomResponse.successOf(paymentResponse);
     }
 
     // This endpoint needs to be public in SecurityConfig, as Stripe sends an unauthenticated request.
     // Security is handled by verifying the Stripe-Signature header in PaymentServiceImpl.
-//    @PostMapping("/stripe/webhook")
-//    public ResponseEntity<String> handleStripeWebhook(@RequestBody String payload, @RequestHeader("Stripe-Signature") String sigHeader) {
-//        log.info("PaymentController :: Received Stripe webhook.");
-//        try {
-//            paymentService.handleStripeWebhook(payload, sigHeader);
-//            log.info("PaymentController :: Stripe webhook processed successfully by service.");
-//            return ResponseEntity.ok("Webhook received and acknowledged.");
-//        } catch (Exception e) { // Catching general exceptions from service layer (e.g., PaymentProcessingException)
-//            log.error("PaymentController :: Error processing Stripe webhook: {}", e.getMessage(), e);
-//            // For Stripe webhooks, it's often recommended to return 200 OK even if your internal processing
-//            // fails after validating the signature, to prevent Stripe from retrying indefinitely.
-//            // Handle the internal failure (log, alert, queue for retry).
-//            // If the exception is due to invalid signature (thrown by PaymentService),
-//            // then a 400 is appropriate.
-//            // This depends on how PaymentService.handleStripeWebhook throws exceptions.
-//            // If PaymentProcessingException for signature is thrown, GlobalExceptionHandler might handle it.
-//            // For now, a general bad request for any error from service:
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook processing error: " + e.getMessage());
-//        }
-//    }
+    /*
+    @PostMapping("/stripe/webhook")
+    public ResponseEntity<String> handleStripeWebhook(@RequestBody String payload,
+                                                      @RequestHeader("Stripe-Signature") String sigHeader) {
+        log.info("PaymentController :: Received Stripe webhook.");
+        try {
+            paymentService.handleStripeWebhook(payload, sigHeader);
+            log.info("PaymentController :: Stripe webhook processed successfully by service.");
+            return ResponseEntity.ok("Webhook received and acknowledged.");
+        } catch (Exception e) {
+            log.error("PaymentController :: Error processing Stripe webhook: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook processing error: " + e.getMessage());
+        }
+    }
+    */
+
+    @PostMapping("/create-checkout-session")
+    public CustomResponse<CheckoutResponseDto> createCheckoutSession(@Valid @RequestBody CheckoutRequestDto checkoutRequest) {
+        log.info("PaymentController :: Received request to create Stripe Checkout Session for Order ID: {}", checkoutRequest.getOrderId());
+        String sessionUrl = paymentService.createStripeCheckoutSession(checkoutRequest.getOrderId());
+        CheckoutResponseDto response = CheckoutResponseDto.builder()
+                .redirectUrl(sessionUrl)
+                .build();
+        return CustomResponse.successOf(response);
+    }
 }

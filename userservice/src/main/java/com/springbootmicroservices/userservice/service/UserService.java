@@ -7,4 +7,5 @@ import java.util.List;
 public interface UserService {
     List<UserResponse> getAllUsers();
     void deleteUserById(String userId);
+    UserResponse getUserById(String userId);
 }

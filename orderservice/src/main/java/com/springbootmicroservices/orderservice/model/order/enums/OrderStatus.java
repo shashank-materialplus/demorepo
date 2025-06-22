@@ -1,6 +1,8 @@
 package com.springbootmicroservices.orderservice.model.order.enums;
 
 public enum OrderStatus {
+    PENDING,
+    CANCELLED,
     PENDING_PAYMENT,    // Order created, awaiting payment confirmation (e.g., from Stripe)
     PAYMENT_FAILED,     // Payment attempt was made but failed
     PENDING_CONFIRMATION, // Payment successful, order details being finalized/stock allocated (optional intermediate state)

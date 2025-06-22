@@ -186,23 +186,48 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.orderEntityToOrderResponse(orderEntity);
     }
 
-    @Override
+    // In OrderServiceImpl.java
+// In OrderServiceImpl.java
+
+    @Override // This @Override annotation will now be correct
     @Transactional
-    public OrderResponse updateOrderStatus(String orderId, OrderStatus newStatus) {
-        log.info("OrderServiceImpl :: Admin (confirmed by @PreAuthorize) updating Order ID: {} to Status: {}", orderId, newStatus);
+    public OrderResponse updateOrderStatus(String orderId, OrderStatus newStatus) { // <-- FIX: Signature now matches the interface (String, OrderStatus)
+
+        log.info("Admin attempting to update Order ID: {} to Status: {}", orderId, newStatus);
+
         OrderEntity orderEntity = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + orderId));
 
-        if (orderEntity.getOrderStatus() == newStatus) {
-            log.info("Order ID: {} is already in status: {}. No update performed.", orderId, newStatus);
+        OrderStatus currentStatus = orderEntity.getOrderStatus();
+
+        if (currentStatus == newStatus) {
+            log.warn("Order ID: {} is already in status: {}. No update needed.", orderId, newStatus);
             return orderMapper.orderEntityToOrderResponse(orderEntity);
         }
 
-        log.info("Updating status for Order ID {} from {} to {}", orderId, orderEntity.getOrderStatus(), newStatus);
-        orderEntity.setOrderStatus(newStatus);
+        // The state machine logic is correct and works with the enum directly.
+        boolean isValidTransition = switch (currentStatus) {
+            case PENDING, PENDING_PAYMENT ->
+                    newStatus == OrderStatus.SHIPPED || newStatus == OrderStatus.CANCELLED;
 
+            case SHIPPED ->
+                    newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.CANCELLED;
+
+            // This default case handles DELIVERED, CANCELLED, and any other states.
+            default -> false;
+        };
+
+        if (!isValidTransition) {
+            String errorMessage = "Cannot change order status from " + currentStatus + " to " + newStatus;
+            log.error("Invalid status transition for Order ID: {}. {}", orderId, errorMessage);
+            throw new InvalidOrderStatusException(errorMessage);
+        }
+
+        log.info("Updating status for Order ID {} from {} to {}", orderId, currentStatus, newStatus);
+        orderEntity.setOrderStatus(newStatus);
         OrderEntity updatedOrder = orderRepository.save(orderEntity);
-        log.info("OrderServiceImpl :: Order ID: {} status updated successfully to: {}", orderId, newStatus);
+
+        log.info("Order ID: {} status successfully updated to: {}", orderId, newStatus);
         return orderMapper.orderEntityToOrderResponse(updatedOrder);
     }
 

@@ -15,11 +15,13 @@ public interface PaymentService {
      */
     PaymentResponse processPayment(PaymentRequestDto paymentRequest);
 
+    String createStripeCheckoutSession(String orderId); // -- new -->
+
     /**
      * Handles incoming webhook events from Stripe.
      *
      * @param payload The raw JSON payload from Stripe.
      * @param sigHeader The 'Stripe-Signature' header value.
      */
-    //void handleStripeWebhook(String payload, String sigHeader);
+    // void handleStripeWebhook(String payload, String sigHeader);
 }

@@ -76,6 +76,7 @@ public interface OrderMapper {
             // stripePaymentIntentId, stripeClientSecret, createdAt, updatedAt
             // @Mapping(source = "orderNotes", target = "orderNotes") // Uncomment if OrderEntity has orderNotes
     })
+    @Mapping(target = "orderNotes", ignore = true)
     OrderResponse orderEntityToOrderResponse(OrderEntity orderEntity);
 
     // Mapping from OrderEntity to OrderHistoryItemResponse
