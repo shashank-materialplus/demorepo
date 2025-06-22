@@ -45,7 +45,7 @@ class AuthControllerTest extends AbstractRestControllerTest {
                 .password("validPassword123")
                 .firstName("John")
                 .lastName("Doe")
-                .phoneNumber("1234567890")
+                .phoneNumber("1234567890100")
                 .role("user")
                 .build();
 
