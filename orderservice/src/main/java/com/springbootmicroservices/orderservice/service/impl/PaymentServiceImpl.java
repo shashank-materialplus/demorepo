@@ -15,7 +15,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +29,10 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderRepository orderRepository;
 
     // The Stripe secret key is now hardcoded as requested.
-    private final String stripeSecretKey = "sk_test_51RZqPfBOUTLq4QBi4uRppN7be87FwTSjizRbUYw6qF5aZKUk38Uv5BKNJqlVLxQZAW0FQgVkWYrdckRp0yKfCAoS00rphhsI4z";
+
+
+    @Value("${stripe.secret-key}")
+    private String stripeSecretKey;
 
     @PostConstruct
     public void init() {
