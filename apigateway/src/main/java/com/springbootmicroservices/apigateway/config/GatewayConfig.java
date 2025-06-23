@@ -23,7 +23,8 @@ public class GatewayConfig {
             "/api/v1/authentication/users/register",
             "/api/v1/authentication/users/login",
             "/api/v1/authentication/users/refresh-token",
-            "/api/v1/authentication/users/logout"
+            "/api/v1/authentication/users/logout",
+            "/api/v1/search"
     );
 
     /**
@@ -47,6 +48,9 @@ public class GatewayConfig {
                         .filters(f -> f.filter(jwtAuthFilter.apply(new JwtAuthenticationFilter.Config()
                                 .setPublicEndpoints(PUBLIC_ENDPOINTS))))
                         .uri("lb://userservice"))
+                .route("searchservice-api", r -> r.path("/api/v1/search/**")
+                        .filters(f -> f.filter(jwtAuthFilter.apply(new JwtAuthenticationFilter.Config().setPublicEndpoints(PUBLIC_ENDPOINTS))))
+                        .uri("lb://search-service"))
                 .route("orderservice", r -> r.path("/api/v1/orders/**", "/api/v1/payments/**")
                         .filters(f -> f.filter(jwtAuthFilter.apply(new JwtAuthenticationFilter.Config()
                                 .setPublicEndpoints(PUBLIC_ENDPOINTS))))
