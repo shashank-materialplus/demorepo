@@ -10,7 +10,7 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // your frontend origin
+        config.setAllowedOrigins(List.of("http://localhost:5173" , "https://5853-14-194-37-68.ngrok-free.app")); // your frontend origin
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // if you're using cookies or auth

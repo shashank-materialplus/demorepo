@@ -1,0 +1,63 @@
+server:
+  port: 1115
+
+spring:
+  application:
+    name: search-service
+  profiles:
+    active: dev
+
+# === ADD THIS ENTIRE SECTION ===
+  datasource:
+    # The JDBC URL for your database
+    url: jdbc:postgresql://localhost:5432/springbootmicroservicesjwtproduct
+    # The username to connect with
+    username: postgres
+    # The password to connect with
+    password: 1234
+    # The class name of the database driver
+    driver-class-name: org.postgresql.Driver
+  # ===============================
+  eureka:
+    client:
+      serviceUrl:
+        # This points to your Eureka server, using an environment variable or a default
+        defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka/}
+    instance:
+      # This helps Eureka register with its IP address, which is good practice
+      prefer-ip-address: true
+# Coveo Configuration
+coveo:
+  search-api-key: xx188267da-bdc5-486d-bd8c-915a9b481ce3
+  push-api-key: xx70fcca7f-439e-44f7-b42d-9ba6f82ba125
+  search-endpoint: https://platform.cloud.coveo.com/rest/search/v2
+  # === NEW: Push API Configuration ===
+  search-hub: default
+  push-api-endpoint: https://api.cloud.coveo.com/push/v1
+  source-id: pviarovgwtkhh4fqvuod3k3sgmq-vjikpwffcyqcwipvnxjpkocana
+  # ===================================
+  organization-id: pviarovgwtkhh4fqvuod3k3sgmq
+  timeout: 30000
+  max-retries: 3
+
+# Actuator for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# A clean, professional logging configuration
+logging:
+  level:
+    # Set the main package for YOUR application to INFO. This is a clean default.
+    com.microservice.searchservice: INFO
+    # Keep Spring's own logs quieter to reduce noise.
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  pattern:
+    # A more detailed pattern that includes the logger name and thread.
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

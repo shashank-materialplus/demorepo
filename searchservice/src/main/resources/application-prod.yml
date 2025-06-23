@@ -1,0 +1,20 @@
+spring:
+  profiles: prod
+
+coveo:
+#
+  search-api-key: xx188267da-bdc5-486d-bd8c-915a9b481ce3
+  push-api-key: xxc4d4b7ec-2b91-48a8-a41e-fe9ae269713e
+  search-endpoint: https://platform.cloud.coveo.com/rest/search/v2
+  # === NEW: Push API Configuration ===
+  push-api-endpoint: https://api.cloud.coveo.com/push/v1
+  source-id: pviarovgwtkhh4fqvuod3k3sgmq-vjikpwffcyqcwipvnxjpkocana
+  # ===================================
+  organization-id: pviarovgwtkhh4fqvuod3k3sgmq
+  timeout: 30000
+  max-retries: 3
+
+logging:
+  level:
+    com.microservice.search: INFO
+    root: WARN
