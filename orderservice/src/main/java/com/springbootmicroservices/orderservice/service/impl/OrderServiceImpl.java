@@ -79,7 +79,7 @@ public class OrderServiceImpl implements OrderService {
 
         OrderEntity orderEntity = new OrderEntity();
         orderEntity.setUserId(userId);
-        orderEntity.setOrderStatus(OrderStatus.PENDING_PAYMENT);
+        orderEntity.setOrderStatus(OrderStatus.PENDING);
         orderEntity.setShippingAddressJson(orderMapper.shippingAddressDtoToJson(createOrderRequest.getShippingAddress()));
 
         BigDecimal calculatedTotalAmount = BigDecimal.ZERO;
