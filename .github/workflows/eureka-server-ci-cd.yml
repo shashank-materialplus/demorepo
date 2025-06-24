@@ -1,4 +1,4 @@
-name: CI/CD Pipeline for API Gateway
+name: CI/CD Pipeline for Eureka Server
 
 on:
   # This trigger is good. It starts this workflow only after the Eureka Server workflow is successfully completed on the main branch.
