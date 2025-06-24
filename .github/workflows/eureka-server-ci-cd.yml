@@ -55,7 +55,7 @@ jobs:
       - name: Dockerize & Push Docker Image
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
-          image: noyandocker/springbootmicroserviceswithsecurityeurekaserver
+          image: shashank/microservicebasedapp
           tags: latest
           registry: docker.io
           dockerfile: eurekaserver/Dockerfile
