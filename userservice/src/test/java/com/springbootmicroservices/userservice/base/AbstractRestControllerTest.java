@@ -8,13 +8,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-// This class no longer needs to generate tokens or extend the TestContainers config.
-public abstract class AbstractRestControllerTest {
+public abstract class AbstractRestControllerTest extends AbstractTestContainerConfiguration {
 
     @Autowired
     protected MockMvc mockMvc;
 
     @Autowired
     protected ObjectMapper objectMapper;
-
 }

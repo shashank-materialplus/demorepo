@@ -11,6 +11,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import com.springbootmicroservices.userservice.base.AbstractTestContainerConfiguration;
 
 import java.util.Collections;
 import java.util.List;
